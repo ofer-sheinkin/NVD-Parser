@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NVD CVE Query UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .form-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        select, input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .results-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        th.sortable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        th.sortable:hover {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            transform: translateY(-1px);
+        }
+        
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 13px;
+            vertical-align: top;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .desc-col {
+            max-width: 400px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+        
+        .refs-col, .cpes-col {
+            max-width: 300px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 12px;
+        }
+        
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .status {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            color: #27ae60;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .error {
+            background: #ffeaea;
+            border: 1px solid #e74c3c;
+            color: #c0392b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .severity-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .severity-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .severity-low {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #2c3e50;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+            
+            .results-section {
+                padding: 20px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+            }
+            
+            .desc-col, .refs-col, .cpes-col {
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NVD CVE Query Tool</h1>
+            <p>Search and analyze Common Vulnerabilities and Exposures (CVE) data from the National Vulnerability Database</p>
+        </div>
+        
+        <div class="content">
+            <div class="form-section">
+                <h2>Load CVE Data</h2>
+                <div class="form-group">
+                    <label for="loadMode">Load Mode:</label>
+                    <select id="loadMode">
+                        <option value="latest">Latest Year</option>
+                        <option value="all">All Years</option>
+                        <option value="years">Specific Years</option>
+                    </select>
+                </div>
+                <div class="form-group" id="yearsGroup" style="display: none;">
+                    <label for="years">Years (e.g., 2023, 2024 or 2020-2022):</label>
+                    <input type="text" id="years" placeholder="2023, 2024, 2020-2022">
+                </div>
+                <button onclick="loadData()">Load Data</button>
+            </div>
+            
+            <div class="form-section">
+                <h2>Search CVEs</h2>
+                <div class="form-group">
+                    <label for="searchQuery">Search Query:</label>
+                    <input type="text" id="searchQuery" placeholder="Enter CVE ID or keyword...">
+                </div>
+                <div class="form-group">
+                    <label for="searchYear">Filter by Year (optional):</label>
+                    <input type="number" id="searchYear" placeholder="e.g., 2024" min="2002">
+                </div>
+                <button onclick="searchCVEs()">Search</button>
+            </div>
+            
+            <div id="status"></div>
+            
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <h3>Search Results</h3>
+                <div id="resultsTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show/hide years input based on load mode
+        document.getElementById('loadMode').addEventListener('change', function() {
+            const yearsGroup = document.getElementById('yearsGroup');
+            if (this.value === 'years') {
+                yearsGroup.style.display = 'block';
+            } else {
+                yearsGroup.style.display = 'none';
+            }
+        });
+
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = isError ? 'error' : 'status';
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+        }
+
+        function showLoading(message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'loading';
+            statusDiv.innerHTML = `
+                <div class="spinner"></div>
+                ${message}
+            `;
+            statusDiv.style.display = 'block';
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        async function loadData() {
+            const mode = document.getElementById('loadMode').value;
+            const years = document.getElementById('years').value;
+            
+            showLoading('Loading CVE data...');
+            
+            try {
+                let url = `/load?mode=${mode}`;
+                if (mode === 'years' && years) {
+                    const yearList = years.split(',').map(y => y.trim());
+                    yearList.forEach(year => {
+                        url += `&years=${year}`;
+                    });
+                }
+                
+                const response = await fetch(url, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.error) {
+                    showStatus(`Error: ${data.error}`, true);
+                } else {
+                    showStatus(`Successfully loaded ${data.cve_count} CVEs from years: ${data.loaded_years.join(', ')}`);
+                }
+            } catch (error) {
+                showStatus(`Error loading data: ${error.message}`, true);
+            }
+        }
+
+        async function searchCVEs() {
+            const query = document.getElementById('searchQuery').value.trim();
+            const year = document.getElementById('searchYear').value;
+            
+            if (!query) {
+                showStatus('Please enter a search query', true);
+                return;
+            }
+            
+            showLoading('Searching CVEs...');
+            
+            try {
+                let url = `/search?query=${encodeURIComponent(query)}`;
+                if (year) {
+                    url += `&year=${year}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                hideStatus();
+                displayResults(data.results);
+            } catch (error) {
+                showStatus(`Error searching CVEs: ${error.message}`, true);
+            }
+        }
+
+        function displayResults(results) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsTable = document.getElementById('resultsTable');
+            
+            if (results.length === 0) {
+                resultsTable.innerHTML = '<p>No results found.</p>';
+                resultsSection.style.display = 'block';
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable" onclick="sortTable(0)">CVE ID ↕</th>
+                            <th class="sortable" onclick="sortTable(1)">Description ↕</th>
+                            <th class="sortable" onclick="sortTable(2)">Published Date ↕</th>
+                            <th class="sortable" onclick="sortTable(3)">Severity ↕</th>
+                            <th class="sortable" onclick="sortTable(4)">CVSS 3.x ↕</th>
+                            <th>CWE</th>
+                            <th>References</th>
+                            <th>CPEs</th>
+                            <th>Exploitability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            results.forEach(result => {
+                const severityClass = result.severity ? `severity-${result.severity.toLowerCase()}` : '';
+                const severityDisplay = result.severity || 'N/A';
+                const cvssDisplay = result.cvss3 || 'N/A';
+                const cweDisplay = result.cwe || 'N/A';
+                const exploitabilityDisplay = result.exploitability || 'N/A';
+                
+                // Format references as clickable links
+                const refsDisplay = result.references && result.references.length > 0 
+                    ? result.references.map(ref => {
+                        const domain = new URL(ref).hostname;
+                        return `<a href="${ref}" target="_blank" title="${ref}">${domain}</a>`;
+                    }).join('<br>')
+                    : 'N/A';
+                
+                // Format CPEs
+                const cpesDisplay = result.cpes && result.cpes.length > 0 
+                    ? result.cpes.map(cpe => cpe.split(':')[4] || cpe).join('<br>')
+                    : 'N/A';
+                
+                tableHTML += `
+                    <tr>
+                        <td><strong>${result.id}</strong></td>
+                        <td class="desc-col">${result.description}</td>
+                        <td>${result.publishedDate ? new Date(result.publishedDate).toLocaleDateString() : 'N/A'}</td>
+                        <td class="${severityClass}">${severityDisplay}</td>
+                        <td>${cvssDisplay}</td>
+                        <td>${cweDisplay}</td>
+                        <td class="refs-col">${refsDisplay}</td>
+                        <td class="cpes-col">${cpesDisplay}</td>
+                        <td>${exploitabilityDisplay}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody></table>';
+            resultsTable.innerHTML = tableHTML;
+            resultsSection.style.display = 'block';
+        }
+
+        let sortDirection = 1;
+        let lastSortColumn = -1;
+
+        function sortTable(columnIndex) {
+            const table = document.querySelector('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Reset sort direction if clicking a different column
+            if (lastSortColumn !== columnIndex) {
+                sortDirection = 1;
+                lastSortColumn = columnIndex;
+            } else {
+                sortDirection *= -1;
+            }
+            
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+                
+                // Handle numeric values
+                const aNum = parseFloat(aValue);
+                const bNum = parseFloat(bValue);
+                
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return (aNum - bNum) * sortDirection;
+                }
+                
+                // Handle dates
+                const aDate = new Date(aValue);
+                const bDate = new Date(bValue);
+                
+                if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+                    return (aDate - bDate) * sortDirection;
+                }
+                
+                // Handle text
+                return aValue.localeCompare(bValue) * sortDirection;
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update header arrows
+            const headers = table.querySelectorAll('th.sortable');
+            headers.forEach((header, index) => {
+                if (index === columnIndex) {
+                    header.textContent = header.textContent.replace(/[↑↓]/, sortDirection === 1 ? '↑' : '↓');
+                } else {
+                    header.textContent = header.textContent.replace(/[↑↓]/, '↕');
+                }
+            });
+        }
+
+        // Handle Enter key in search input
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchCVEs();
+            }
+        });
+    </script>
+</body>
+</html> 
