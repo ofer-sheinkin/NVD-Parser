@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>NVD CVE Query UI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -11,36 +12,75 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #0f1419 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #e8eaed;
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background: linear-gradient(145deg, #1a1f2e 0%, #2a2f3e 100%);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             overflow: hidden;
+            border: 1px solid #3a3f4e;
         }
         
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 30px;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+            color: #e8eaed;
+            padding: 40px 30px;
             text-align: center;
+            border-bottom: 2px solid #00d4ff;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00d4ff, #0099cc, #00d4ff);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon {
+            font-size: 3em;
+            color: #00d4ff;
+            margin-right: 20px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
         }
         
         .header h1 {
-            font-size: 2.5em;
+            font-size: 2.8em;
             margin-bottom: 10px;
             font-weight: 300;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .header p {
             opacity: 0.9;
             font-size: 1.1em;
+            color: #b0b3b8;
         }
         
         .content {
@@ -48,17 +88,29 @@
         }
         
         .form-section {
-            background: #f8f9fa;
-            border-radius: 10px;
+            background: linear-gradient(145deg, #2a2f3e 0%, #1a1f2e 100%);
+            border-radius: 15px;
             padding: 25px;
             margin-bottom: 30px;
-            border-left: 4px solid #3498db;
+            border-left: 4px solid #00d4ff;
+            border: 1px solid #3a3f4e;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
         
         .form-section h2 {
-            color: #2c3e50;
+            color: #00d4ff;
             margin-bottom: 20px;
             font-size: 1.4em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-section h2::before {
+            content: '\f132';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-right: 10px;
+            color: #00d4ff;
         }
         
         .form-group {
@@ -69,27 +121,30 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #34495e;
+            color: #e8eaed;
         }
         
-        select, input[type="text"] {
+        select, input[type="text"], input[type="number"] {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #e1e8ed;
+            border: 2px solid #3a3f4e;
             border-radius: 8px;
             font-size: 14px;
             transition: all 0.3s ease;
+            background: #1a1f2e;
+            color: #e8eaed;
         }
         
-        select:focus, input[type="text"]:focus {
+        select:focus, input[type="text"]:focus, input[type="number"]:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+            background: #2a2f3e;
         }
         
         button {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #0a0e1a;
             border: none;
             padding: 12px 25px;
             border-radius: 8px;
@@ -97,12 +152,29 @@
             font-size: 14px;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        button:hover::before {
+            left: 100%;
         }
         
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
         }
         
         button:active {
@@ -110,38 +182,51 @@
         }
         
         .results-section {
-            background: white;
-            border-radius: 10px;
+            background: linear-gradient(145deg, #2a2f3e 0%, #1a1f2e 100%);
+            border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            border: 1px solid #3a3f4e;
         }
         
         .results-section h3 {
-            color: #2c3e50;
+            color: #00d4ff;
             margin-bottom: 20px;
             font-size: 1.3em;
-            border-bottom: 2px solid #ecf0f1;
+            border-bottom: 2px solid #3a3f4e;
             padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .results-section h3::before {
+            content: '\f06e';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-right: 10px;
+            color: #00d4ff;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
+            background: #1a1f2e;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            border: 1px solid #3a3f4e;
         }
         
         th {
-            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-            color: white;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+            color: #00d4ff;
             padding: 15px 10px;
             text-align: left;
             font-weight: 600;
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border-bottom: 2px solid #3a3f4e;
         }
         
         th.sortable {
@@ -150,19 +235,21 @@
         }
         
         th.sortable:hover {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(135deg, #1a1f2e 0%, #2a2f3e 100%);
             transform: translateY(-1px);
+            color: #e8eaed;
         }
         
         td {
             padding: 12px 10px;
-            border-bottom: 1px solid #ecf0f1;
+            border-bottom: 1px solid #3a3f4e;
             font-size: 13px;
             vertical-align: top;
+            color: #e8eaed;
         }
         
         tr:hover {
-            background-color: #f8f9fa;
+            background-color: #2a2f3e;
         }
         
         .desc-col {
@@ -180,19 +267,20 @@
         }
         
         a {
-            color: #3498db;
+            color: #00d4ff;
             text-decoration: none;
             font-weight: 500;
         }
         
         a:hover {
             text-decoration: underline;
+            color: #0099cc;
         }
         
         .status {
-            background: #e8f5e8;
-            border: 1px solid #27ae60;
-            color: #27ae60;
+            background: linear-gradient(145deg, #1a2e1a 0%, #0f1a0f 100%);
+            border: 1px solid #00ff88;
+            color: #00ff88;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -200,9 +288,9 @@
         }
         
         .error {
-            background: #ffeaea;
-            border: 1px solid #e74c3c;
-            color: #c0392b;
+            background: linear-gradient(145deg, #2e1a1a 0%, #1a0f0f 100%);
+            border: 1px solid #ff4444;
+            color: #ff6666;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -212,12 +300,12 @@
         .loading {
             text-align: center;
             padding: 20px;
-            color: #7f8c8d;
+            color: #b0b3b8;
         }
         
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
+            border: 3px solid #3a3f4e;
+            border-top: 3px solid #00d4ff;
             border-radius: 50%;
             width: 30px;
             height: 30px;
@@ -231,17 +319,17 @@
         }
         
         .severity-high {
-            color: #e74c3c;
+            color: #ff4444;
             font-weight: bold;
         }
         
         .severity-medium {
-            color: #f39c12;
+            color: #ffaa00;
             font-weight: bold;
         }
         
         .severity-low {
-            color: #27ae60;
+            color: #00ff88;
             font-weight: bold;
         }
         
@@ -256,14 +344,18 @@
             bottom: 125%;
             left: 50%;
             transform: translateX(-50%);
-            background: #2c3e50;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
+            background: #0f1419;
+            color: #e8eaed;
+            padding: 12px 16px;
+            border-radius: 8px;
             font-size: 12px;
-            white-space: nowrap;
+            white-space: pre-line;
             z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            border: 1px solid #00d4ff;
+            max-width: 400px;
+            line-height: 1.4;
+            text-align: left;
         }
         
         .tooltip:hover::before {
@@ -272,15 +364,40 @@
             bottom: 125%;
             left: 50%;
             transform: translateX(-50%);
-            border: 5px solid transparent;
-            border-top-color: #2c3e50;
+            border: 6px solid transparent;
+            border-top-color: #0f1419;
             z-index: 1000;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+            color: #b0b3b8;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 1px solid #3a3f4e;
+            font-size: 14px;
+        }
+        
+        .footer p {
+            margin: 0;
+            opacity: 0.8;
+        }
+        
+        .footer a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+            color: #0099cc;
         }
         
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
-                border-radius: 10px;
+                border-radius: 15px;
             }
             
             .header {
@@ -303,6 +420,11 @@
                 padding: 20px;
             }
             
+            .footer {
+                padding: 15px 20px;
+                font-size: 12px;
+            }
+            
             table {
                 font-size: 12px;
             }
@@ -320,7 +442,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>NVD CVE Query Tool</h1>
+            <div class="logo">
+                <i class="fas fa-shield-alt logo-icon"></i>
+                <h1>NVD CVE Query Tool</h1>
+            </div>
             <p>Search and analyze Common Vulnerabilities and Exposures (CVE) data from the National Vulnerability Database</p>
         </div>
         
@@ -361,6 +486,10 @@
                 <h3>Search Results</h3>
                 <div id="resultsTable"></div>
             </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2024, 2025 by CyProtect.io. Powered by <a href="https://nvd.nist.gov/" target="_blank">National Vulnerability Database</a> | Built with FastAPI & Modern Web Technologies</p>
         </div>
     </div>
 
@@ -494,10 +623,27 @@
                     }).join('<br>')
                     : 'N/A';
                 
-                // Format CPEs
+                // Format CPEs with tooltip
                 const cpesDisplay = result.cpes && result.cpes.length > 0 
                     ? result.cpes.map(cpe => cpe.split(':')[4] || cpe).join('<br>')
                     : 'N/A';
+                
+                // Create tooltip content for each field
+                const cpeTooltip = result.cpes && result.cpes.length > 0 
+                    ? `CPE (Common Platform Enumeration):<br>${result.cpes.join('<br>')}`
+                    : 'CPE (Common Platform Enumeration): No affected products identified';
+                
+                const cweTooltip = result.cwe 
+                    ? `CWE (Common Weakness Enumeration): ${result.cwe}<br><br>Common Weakness Enumeration is a category system for software weaknesses and vulnerabilities.`
+                    : 'CWE (Common Weakness Enumeration): Not specified';
+                
+                const cvssTooltip = result.cvss3 
+                    ? `CVSS 3.x Score: ${result.cvss3}<br><br>Common Vulnerability Scoring System (CVSS) is a framework for rating the severity of security vulnerabilities. Scores range from 0.0 (lowest) to 10.0 (highest).`
+                    : 'CVSS 3.x Score: Not available<br><br>Common Vulnerability Scoring System (CVSS) is a framework for rating the severity of security vulnerabilities.';
+                
+                const exploitabilityTooltip = result.exploitability 
+                    ? `Exploitability: ${result.exploitability}<br><br>Indicates the current state of exploit techniques or code availability for this vulnerability.`
+                    : 'Exploitability: Not specified<br><br>Indicates the current state of exploit techniques or code availability for this vulnerability.';
                 
                 tableHTML += `
                     <tr>
@@ -505,11 +651,11 @@
                         <td class="desc-col">${result.description}</td>
                         <td>${result.publishedDate ? new Date(result.publishedDate).toLocaleDateString() : 'N/A'}</td>
                         <td class="${severityClass}">${severityDisplay}</td>
-                        <td>${cvssDisplay}</td>
-                        <td>${cweDisplay}</td>
+                        <td class="tooltip" data-tooltip="${cvssTooltip}">${cvssDisplay}</td>
+                        <td class="tooltip" data-tooltip="${cweTooltip}">${cweDisplay}</td>
                         <td class="refs-col">${refsDisplay}</td>
-                        <td class="cpes-col">${cpesDisplay}</td>
-                        <td>${exploitabilityDisplay}</td>
+                        <td class="cpes-col tooltip" data-tooltip="${cpeTooltip}">${cpesDisplay}</td>
+                        <td class="tooltip" data-tooltip="${exploitabilityTooltip}">${exploitabilityDisplay}</td>
                     </tr>
                 `;
             });
