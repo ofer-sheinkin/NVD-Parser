@@ -546,6 +546,41 @@
             }
         });
 
+        // Fetch and display available years on page load
+        async function showAvailableYears() {
+            try {
+                const response = await fetch('/available_years');
+                const data = await response.json();
+                const yearsPane = document.getElementById('yearsPane');
+                const yearsList = document.getElementById('yearsList');
+                yearsList.innerHTML = '';
+                data.years.forEach(y => {
+                    const li = document.createElement('li');
+                    li.textContent = y;
+                    yearsList.appendChild(li);
+                });
+                yearsPane.querySelector('h2').textContent = 'Available Years';
+                yearsPane.style.display = 'block';
+                
+                // Add total CVE count at the bottom
+                try {
+                    const statsResponse = await fetch('/stats');
+                    const statsData = await statsResponse.json();
+                    const totalDiv = document.createElement('div');
+                    totalDiv.style.cssText = 'margin-top: 15px; padding-top: 15px; border-top: 1px solid #3a3f4e; color: #00d4ff; font-weight: bold; text-align: center;';
+                    totalDiv.textContent = `Total CVEs in Database: ${statsData.total_cves.toLocaleString()}`;
+                    yearsPane.appendChild(totalDiv);
+                } catch (error) {
+                    // If stats fail, don't show total
+                }
+            } catch (error) {
+                // Hide the pane if error
+                document.getElementById('yearsPane').style.display = 'none';
+            }
+        }
+        // Call on page load
+        showAvailableYears();
+
         function showStatus(message, isError = false) {
             const statusDiv = document.getElementById('status');
             statusDiv.className = isError ? 'error' : 'status';
@@ -598,7 +633,20 @@
                         li.textContent = y;
                         yearsList.appendChild(li);
                     });
+                    yearsPane.querySelector('h2').textContent = 'Loaded Years';
                     yearsPane.style.display = 'block';
+                    
+                    // Add total CVE count at the bottom
+                    try {
+                        const statsResponse = await fetch('/stats');
+                        const statsData = await statsResponse.json();
+                        const totalDiv = document.createElement('div');
+                        totalDiv.style.cssText = 'margin-top: 15px; padding-top: 15px; border-top: 1px solid #3a3f4e; color: #00d4ff; font-weight: bold; text-align: center;';
+                        totalDiv.textContent = `Total CVEs in Database: ${statsData.total_cves.toLocaleString()}`;
+                        yearsPane.appendChild(totalDiv);
+                    } catch (error) {
+                        // If stats fail, don't show total
+                    }
                 }
             } catch (error) {
                 showStatus(`Error loading data: ${error.message}`, true);

@@ -67,6 +67,15 @@ def create_cve_table():
     cur.close()
     conn.close()
 
+# Helper to clear the CVE table
+def clear_cve_table():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM cves')
+    conn.commit()
+    cur.close()
+    conn.close()
+
 def save_cve_to_db(cve):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -126,6 +135,7 @@ def load_nvd_data(
     mode: 'latest', 'all', or 'years'
     years: list of years or ranges (if mode is 'years')
     """
+    # Remove the clear operation - accumulate data instead of replacing
     available_years = get_available_years()
     if mode == "latest":
         years_to_load = [available_years[-1]]
@@ -158,6 +168,11 @@ def load_nvd_data(
         print('Backed up cves.db to cves_backup.db')
     print(f"[LOG] Loaded {len(CVE_DATA)} CVEs from NVD for years {years_to_load} and inserted into the database.")
     return {"loaded_years": years_to_load, "cve_count": len(CVE_DATA)}
+
+@app.post("/clear")
+def clear_cve_db():
+    clear_cve_table()
+    return JSONResponse({"status": "success", "message": "CVE table cleared."})
 
 @app.get("/ui", response_class=HTMLResponse)
 def serve_ui(request: Request):
@@ -292,4 +307,36 @@ def get_cve_details(cve_id: str):
                 "impact": impact
             }
     
-    return {"error": "CVE not found"} 
+    return {"error": "CVE not found"}
+
+@app.get("/available_years")
+def get_years():
+    return {"years": get_available_years()}
+
+@app.get("/stats")
+def get_db_stats():
+    """
+    Get database statistics including total CVEs and breakdown by year.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Get total count
+    cur.execute('SELECT COUNT(*) FROM cves')
+    total_cves = cur.fetchone()[0]
+    
+    # Get breakdown by year
+    cur.execute('''
+        SELECT substr(cve_id, 5, 4) as year, COUNT(*) as count 
+        FROM cves 
+        GROUP BY year 
+        ORDER BY year
+    ''')
+    year_breakdown = [{"year": row[0], "count": row[1]} for row in cur.fetchall()]
+    
+    conn.close()
+    
+    return {
+        "total_cves": total_cves,
+        "year_breakdown": year_breakdown
+    } 
