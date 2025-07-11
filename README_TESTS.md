@@ -272,3 +272,36 @@ The test suite provides several metrics:
 - **Success Rate**: Percentage of passing tests
 
 Monitor these metrics to ensure test quality and application reliability. 
+
+## PostgreSQL Integration
+
+To store CVE data in PostgreSQL:
+
+1. Install PostgreSQL and create a database (default: `nvd`).
+2. Create the CVE table with the following SQL:
+
+```sql
+CREATE TABLE cves (
+    id SERIAL PRIMARY KEY,
+    cve_id VARCHAR(32) UNIQUE NOT NULL,
+    description TEXT,
+    published_date TIMESTAMP,
+    severity VARCHAR(16),
+    cvss3 NUMERIC,
+    cwe VARCHAR(32),
+    references TEXT[],
+    cpes TEXT[],
+    exploitability VARCHAR(64)
+);
+```
+
+3. Set environment variables for DB connection (or use defaults):
+   - `POSTGRES_DB` (default: nvd)
+   - `POSTGRES_USER` (default: postgres)
+   - `POSTGRES_PASSWORD` (default: password)
+   - `POSTGRES_HOST` (default: localhost)
+   - `POSTGRES_PORT` (default: 5432)
+
+4. On loading CVE data, records will be inserted/updated in the database automatically.
+
+--- 

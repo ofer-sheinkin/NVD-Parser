@@ -437,6 +437,44 @@
                 max-width: 200px;
             }
         }
+        .years-pane {
+            background: linear-gradient(135deg, #1a1f2e 0%, #2a2f3e 100%);
+            border-radius: 12px;
+            border: 1px solid #3a3f4e;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            color: #00d4ff;
+            margin: 20px 0 30px 0;
+            padding: 18px 24px;
+            max-width: 600px;
+        }
+        .years-pane h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+        .years-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .years-grid li {
+            color: #e8eaed;
+            font-size: 0.9em;
+            padding: 6px 8px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .years-grid li:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: rgba(0, 212, 255, 0.4);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -485,6 +523,10 @@
             <div class="results-section" id="resultsSection" style="display: none;">
                 <h3>Search Results</h3>
                 <div id="resultsTable"></div>
+            </div>
+            <div class="years-pane" id="yearsPane" style="display:none;">
+                <h2>Loaded Years</h2>
+                <ul class="years-grid" id="yearsList"></ul>
             </div>
         </div>
         
@@ -547,6 +589,16 @@
                     showStatus(`Error: ${data.error}`, true);
                 } else {
                     showStatus(`Successfully loaded ${data.cve_count} CVEs from years: ${data.loaded_years.join(', ')}`);
+                    // Update loaded years pane
+                    const yearsPane = document.getElementById('yearsPane');
+                    const yearsList = document.getElementById('yearsList');
+                    yearsList.innerHTML = '';
+                    data.loaded_years.forEach(y => {
+                        const li = document.createElement('li');
+                        li.textContent = y;
+                        yearsList.appendChild(li);
+                    });
+                    yearsPane.style.display = 'block';
                 }
             } catch (error) {
                 showStatus(`Error loading data: ${error.message}`, true);

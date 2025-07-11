@@ -6,6 +6,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.responses import HTMLResponse, JSONResponse
 import os
+import json
+from src.db import get_db_connection
 
 app = FastAPI()
 
@@ -36,6 +38,60 @@ def download_nvd_feeds(years: List[int]):
                 CVE_DATA.extend(data.get("CVE_Items", []))
         else:
             print(f"Failed to download {url}")
+
+def create_cve_table():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS cves (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cve_id TEXT UNIQUE NOT NULL,
+            description TEXT,
+            published_date TEXT,
+            severity TEXT,
+            cvss3 REAL,
+            cwe TEXT,
+            refs TEXT,
+            cpes TEXT,
+            exploitability TEXT
+        )
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def save_cve_to_db(cve):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        INSERT INTO cves (cve_id, description, published_date, severity, cvss3, cwe, refs, cpes, exploitability)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(cve_id) DO UPDATE SET
+            description=excluded.description,
+            published_date=excluded.published_date,
+            severity=excluded.severity,
+            cvss3=excluded.cvss3,
+            cwe=excluded.cwe,
+            refs=excluded.refs,
+            cpes=excluded.cpes,
+            exploitability=excluded.exploitability
+    ''', (
+        cve['id'],
+        cve['description'],
+        cve.get('publishedDate'),
+        cve.get('severity'),
+        cve.get('cvss3'),
+        cve.get('cwe'),
+        json.dumps(cve.get('references', [])),
+        json.dumps(cve.get('cpes', [])),
+        cve.get('exploitability'),
+    ))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+# Call create_cve_table() at app startup
+create_cve_table()
 
 @app.get("/")
 def read_root():
