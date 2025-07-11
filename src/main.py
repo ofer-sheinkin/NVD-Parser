@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, JSONResponse
 import os
 import json
+import shutil
 from src.db import get_db_connection
 
 app = FastAPI()
@@ -93,6 +94,75 @@ def save_cve_to_db(cve):
 # Call create_cve_table() at app startup
 create_cve_table()
 
+# Restore from backup if needed
+def restore_db_from_backup():
+    db_file = os.path.join(os.path.dirname(__file__), '..', 'cves.db')
+    backup_file = os.path.join(os.path.dirname(__file__), '..', 'cves_backup.db')
+    if os.path.exists(backup_file) and not os.path.exists(db_file):
+        shutil.copyfile(backup_file, db_file)
+        print('Restored cves.db from cves_backup.db')
+
+restore_db_from_backup()
+
+@app.on_event("startup")
+def reload_cve_db_on_startup():
+    """
+    Automatically reload the latest year's CVE data into the SQLite database on app startup.
+    """
+    available_years = get_available_years()
+    latest_year = available_years[-1]
+    download_nvd_feeds([latest_year])
+    for item in CVE_DATA:
+        # Prepare the CVE dict for DB insertion (reuse logic from search_cves)
+        cve_id = item.get("cve", {}).get("CVE_data_meta", {}).get("ID", "")
+        descs = item.get("cve", {}).get("description", {}).get("description_data", [])
+        desc = " ".join([d.get("value", "") for d in descs])
+        cwe_list = []
+        for pt in item.get("cve", {}).get("problemtype", {}).get("problemtype_data", []):
+            for d in pt.get("description", []):
+                val = d.get("value", "")
+                if val and val != "NVD-CWE-Other" and val != "NVD-CWE-noinfo":
+                    cwe_list.append(val)
+        cwe = ", ".join(cwe_list)
+        refs = [r.get("url", "") for r in item.get("cve", {}).get("references", {}).get("reference_data", [])]
+        cpes = []
+        for node in item.get("configurations", {}).get("nodes", []):
+            for cpe in node.get("cpe_match", []):
+                if cpe.get("vulnerable", False):
+                    cpes.append(cpe.get("cpe23Uri", ""))
+        impact = item.get("impact", {})
+        exploitability = ""
+        if "baseMetricV3" in impact:
+            exploitability = str(impact["baseMetricV3"].get("exploitabilityScore", ""))
+        elif "baseMetricV2" in impact:
+            exploitability = str(impact["baseMetricV2"].get("exploitabilityScore", ""))
+        published = item.get("publishedDate", "")
+        severity = ""
+        cvss3 = ""
+        if "baseMetricV3" in impact:
+            cvss3 = impact["baseMetricV3"].get("cvssV3", {}).get("baseScore", "")
+            severity = impact["baseMetricV3"].get("cvssV3", {}).get("baseSeverity", "")
+        elif "baseMetricV2" in impact:
+            severity = impact["baseMetricV2"].get("severity", "")
+        cve = {
+            "id": cve_id,
+            "description": desc,
+            "publishedDate": published,
+            "severity": severity,
+            "cvss3": cvss3,
+            "cwe": cwe,
+            "references": refs,
+            "cpes": cpes,
+            "exploitability": exploitability
+        }
+        save_cve_to_db(cve)
+    # Backup DB after update
+    db_file = os.path.join(os.path.dirname(__file__), '..', 'cves.db')
+    backup_file = os.path.join(os.path.dirname(__file__), '..', 'cves_backup.db')
+    if os.path.exists(db_file):
+        shutil.copyfile(db_file, backup_file)
+        print('Backed up cves.db to cves_backup.db')
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the NVD CVE Query API!"}
@@ -132,6 +202,12 @@ def load_nvd_data(
         return {"error": "Invalid mode or years"}
     download_nvd_feeds(years_to_load)
     return {"loaded_years": years_to_load, "cve_count": len(CVE_DATA)}
+    # Backup DB after update
+    db_file = os.path.join(os.path.dirname(__file__), '..', 'cves.db')
+    backup_file = os.path.join(os.path.dirname(__file__), '..', 'cves_backup.db')
+    if os.path.exists(db_file):
+        shutil.copyfile(db_file, backup_file)
+        print('Backed up cves.db to cves_backup.db')
 
 @app.get("/ui", response_class=HTMLResponse)
 def serve_ui(request: Request):
