@@ -96,8 +96,8 @@ create_cve_table()
 
 # Restore from backup if needed
 def restore_db_from_backup():
-    db_file = os.path.join(os.path.dirname(__file__), '..', 'cves.db')
-    backup_file = os.path.join(os.path.dirname(__file__), '..', 'cves_backup.db')
+    db_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves.db')
+    backup_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves_backup.db')
     if os.path.exists(backup_file) and not os.path.exists(db_file):
         shutil.copyfile(backup_file, db_file)
         print('Restored cves.db from cves_backup.db')
@@ -157,11 +157,12 @@ def reload_cve_db_on_startup():
         }
         save_cve_to_db(cve)
     # Backup DB after update
-    db_file = os.path.join(os.path.dirname(__file__), '..', 'cves.db')
-    backup_file = os.path.join(os.path.dirname(__file__), '..', 'cves_backup.db')
+    db_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves.db')
+    backup_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves_backup.db')
     if os.path.exists(db_file):
         shutil.copyfile(db_file, backup_file)
         print('Backed up cves.db to cves_backup.db')
+    print(f"[LOG] Loaded {len(CVE_DATA)} CVEs from NVD for year {latest_year} and inserted into the database.")
 
 @app.get("/")
 def read_root():
@@ -201,13 +202,14 @@ def load_nvd_data(
     else:
         return {"error": "Invalid mode or years"}
     download_nvd_feeds(years_to_load)
-    return {"loaded_years": years_to_load, "cve_count": len(CVE_DATA)}
     # Backup DB after update
-    db_file = os.path.join(os.path.dirname(__file__), '..', 'cves.db')
-    backup_file = os.path.join(os.path.dirname(__file__), '..', 'cves_backup.db')
+    db_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves.db')
+    backup_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves_backup.db')
     if os.path.exists(db_file):
         shutil.copyfile(db_file, backup_file)
         print('Backed up cves.db to cves_backup.db')
+    print(f"[LOG] Loaded {len(CVE_DATA)} CVEs from NVD for years {years_to_load} and inserted into the database.")
+    return {"loaded_years": years_to_load, "cve_count": len(CVE_DATA)}
 
 @app.get("/ui", response_class=HTMLResponse)
 def serve_ui(request: Request):
