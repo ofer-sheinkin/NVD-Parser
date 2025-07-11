@@ -26,19 +26,25 @@ def get_available_years():
 
 # Helper to download and parse NVD feeds
 def download_nvd_feeds(years: List[int]):
+    import requests
     global CVE_DATA
     CVE_DATA = []
     for year in years:
         url = f"{NVD_BASE_URL}nvdcve-1.1-{year}.json.gz"
         print(f"Downloading {url}")
-        resp = requests.get(url)
-        if resp.status_code == 200:
-            import gzip, json, io
-            with gzip.GzipFile(fileobj=io.BytesIO(resp.content)) as gz:
-                data = json.load(gz)
-                CVE_DATA.extend(data.get("CVE_Items", []))
-        else:
-            print(f"Failed to download {url}")
+        try:
+            resp = requests.get(url, timeout=30)
+            if resp.status_code == 200:
+                import gzip, json, io
+                with gzip.GzipFile(fileobj=io.BytesIO(resp.content)) as gz:
+                    data = json.load(gz)
+                    CVE_DATA.extend(data.get("CVE_Items", []))
+            else:
+                print(f"Failed to download {url} (status code: {resp.status_code})")
+        except requests.exceptions.Timeout:
+            print(f"Timeout while downloading {url}")
+        except Exception as e:
+            print(f"Error downloading {url}: {e}")
 
 def create_cve_table():
     conn = get_db_connection()
@@ -104,65 +110,7 @@ def restore_db_from_backup():
 
 restore_db_from_backup()
 
-@app.on_event("startup")
-def reload_cve_db_on_startup():
-    """
-    Automatically reload the latest year's CVE data into the SQLite database on app startup.
-    """
-    available_years = get_available_years()
-    latest_year = available_years[-1]
-    download_nvd_feeds([latest_year])
-    for item in CVE_DATA:
-        # Prepare the CVE dict for DB insertion (reuse logic from search_cves)
-        cve_id = item.get("cve", {}).get("CVE_data_meta", {}).get("ID", "")
-        descs = item.get("cve", {}).get("description", {}).get("description_data", [])
-        desc = " ".join([d.get("value", "") for d in descs])
-        cwe_list = []
-        for pt in item.get("cve", {}).get("problemtype", {}).get("problemtype_data", []):
-            for d in pt.get("description", []):
-                val = d.get("value", "")
-                if val and val != "NVD-CWE-Other" and val != "NVD-CWE-noinfo":
-                    cwe_list.append(val)
-        cwe = ", ".join(cwe_list)
-        refs = [r.get("url", "") for r in item.get("cve", {}).get("references", {}).get("reference_data", [])]
-        cpes = []
-        for node in item.get("configurations", {}).get("nodes", []):
-            for cpe in node.get("cpe_match", []):
-                if cpe.get("vulnerable", False):
-                    cpes.append(cpe.get("cpe23Uri", ""))
-        impact = item.get("impact", {})
-        exploitability = ""
-        if "baseMetricV3" in impact:
-            exploitability = str(impact["baseMetricV3"].get("exploitabilityScore", ""))
-        elif "baseMetricV2" in impact:
-            exploitability = str(impact["baseMetricV2"].get("exploitabilityScore", ""))
-        published = item.get("publishedDate", "")
-        severity = ""
-        cvss3 = ""
-        if "baseMetricV3" in impact:
-            cvss3 = impact["baseMetricV3"].get("cvssV3", {}).get("baseScore", "")
-            severity = impact["baseMetricV3"].get("cvssV3", {}).get("baseSeverity", "")
-        elif "baseMetricV2" in impact:
-            severity = impact["baseMetricV2"].get("severity", "")
-        cve = {
-            "id": cve_id,
-            "description": desc,
-            "publishedDate": published,
-            "severity": severity,
-            "cvss3": cvss3,
-            "cwe": cwe,
-            "references": refs,
-            "cpes": cpes,
-            "exploitability": exploitability
-        }
-        save_cve_to_db(cve)
-    # Backup DB after update
-    db_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves.db')
-    backup_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'cves_backup.db')
-    if os.path.exists(db_file):
-        shutil.copyfile(db_file, backup_file)
-        print('Backed up cves.db to cves_backup.db')
-    print(f"[LOG] Loaded {len(CVE_DATA)} CVEs from NVD for year {latest_year} and inserted into the database.")
+# Remove the automatic load on startup by deleting the reload_cve_db_on_startup function and its decorator.
 
 @app.get("/")
 def read_root():
